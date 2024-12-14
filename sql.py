@@ -1,72 +1,80 @@
 import pyodbc
 
-# import sqlite3
-
-
 class DataBase:
-    def __init__(self, conn_str):
-        self.connect = pyodbc.connect(conn_str)
-        # self.connect = sqlite3.connect(file_name)
+    def __init__(self, str_conn):
+        self.connect = pyodbc.connect(str_conn)
         self.cursor = self.connect.cursor()
 
     def get_info(self):
+        """
+        Это функция для вывода товаров в каталог
+        """
         with self.connect:
-            return self.cursor.execute("""SELECT * FROM users_tb""").fetchall()
+            return self.cursor.execute("""SELECT product_id, product_name, price, count, path FROM products_tb""").fetchall()
 
-    def get_info_r(self):
+    def buy_prod(self, count, product_name):
+        """
+        Покупка товара
+        """
         with self.connect:
-            return self.cursor.execute("""SELECT * FROM users_right""").fetchall()
+            return self.cursor.execute("""UPDATE products_tb SET count=(?) WHERE product_name=(?)""", (count, product_name,))
 
-    def add_user(self, username, user_num, password):
+    def change_info(self, articule, new_name):
+        """При отстутсвии товара (количество = 0) изменяет название товара"""
         with self.connect:
-            return self.cursor.execute(
-                """INSERT INTO users_tb (username, user_last_name, user_role, user_password) VALUES (?, ?, ?, ?)""",
-                (
-                    username,
-                    user_num,
-                    "admin" if username == "Тимур" else "user",
-                    password,
-                ),
-            )
+            return self.cursor.execute("""UPDATE products_tb SET product_name=(?) WHERE product_id=(?)""", (articule, new_name))
 
-    def add_user_r(self, username, user_num, password):
+    def check_user(self, login):
         with self.connect:
-            return self.cursor.execute(
-                """INSERT INTO users_right (username, user_lastname, user_role, user_password) VALUES (?, ?, ?, ?)""",
-                (
-                    username,
-                    user_num,
-                    "admin" if username == "Тимур" else "user",
-                    password,
-                ),
-            )
+            result = self.cursor.execute("""SELECT * FROM users WHERE login = ?""", (login, )).fetchone()
+            if result is not None:
+                return False
+            else:
+                return True
 
-    def update_user(self, user_id, username, last_name, password):
+    def login_user(self, login):
         with self.connect:
-            return self.cursor.execute(
-                """UPDATE users_tb SET username=(?), user_last_name = (?), user_password = (?) WHERE user_id=(?)""",
-                (username, last_name, password, user_id),
-            )
+            return self.cursor.execute("""SELECT login, username, password, role FROM users WHERE login=(?)""", (login, )).fetchone()
 
-    def delete_user(self, user_id, username, num, role, password):
+    def add_user(self, login, username, password):
         with self.connect:
-            return self.cursor.execute(
-                """DELETE FROM users_tb WHERE user_id=(?) AND username=(?) AND user_last_name=(?) AND user_role=(?) AND user_password=(?)""",
-                (user_id, username, num, role, password),
-            )
+            return self.cursor.execute("""INSERT INTO users (login, username, role, password) VALUES (?, ?, ?, ?)""", (login, username, 'user', password))
 
-    def delete_user_right(self, user_id, username, num, role, password):
+    def get_info_product(self):
         with self.connect:
-            return self.cursor.execute(
-                """DELETE FROM users_right WHERE user_id=(?) AND username=(?) AND user_lastname=(?) AND user_role=(?) AND user_password=(?)""",
-                (user_id, username, num, role, password),
-            )
+            return self.cursor.execute("""SELECT * FROM products_tb""").fetchall()
 
-    def send_to_left_table(
-        self, user_id, username, user_lastname, user_role, user_password
-    ):
+    def add_product(self, product_name, price, count, product_path):
         with self.connect:
-            return self.cursor.execute(
-                """INSERT INTO users_tb (user_id, username, user_lastname, user_role, user_password) VALUES (?, ?, ?, ?, ?)""",
-                (user_id, username, user_lastname, user_role, user_password),
-            )
+            return self.cursor.execute("""INSERT INTO products_tb (product_name, price, count, path) VALUES (?, ?, ?, ?)""", 
+            (product_name, price, count, product_path))
+
+    def update_product(self, product_id, product_name, price, count, path):
+        with self.connect:
+            return self.cursor.execute("""UPDATE products_tb SET product_name=(?), price=(?), count=(?), path=(?) WHERE product_id=(?)""", (product_name, price, count, path, product_id))
+        
+    def delete_user(self, product_id, product_name, price, count, path):
+        with self.connect:
+            return self.cursor.execute("""DELETE FROM products_tb WHERE product_id = (?) AND product_name = (?) AND price = (?) AND count = (?) AND path=(?)""", 
+                                        (product_id, product_name, price, count, path))
+
+    def get_info_users(self):
+        with self.connect:
+            return self.cursor.execute("""SELECT * FROM users""").fetchall()
+
+    def add_user(self, login, username, password):
+        with self.connect:
+            return self.cursor.execute("""INSERT INTO users (login, username, role, password) VALUES (?, ?, ?, ?)""",
+                                       (login, username, 'user', password, ))
+
+    def update_user(self, user_id, login, username, role, password):
+        with self.connect:
+            return self.cursor.execute("""UPDATE users SET login=(?), username=(?), role=(?), password=(?) WHERE user_id=(?)""", (login, username, role, password, user_id))
+
+    def delete_user(self, user_id, login, username, role, password):
+        with self.connect:
+            return self.cursor.execute("""DELETE FROM users WHERE user_id=(?) AND login=(?) AND username=(?) AND role=(?) AND password=(?)""",
+                                       (user_id, login, username, role, password))
+
+
+#123
